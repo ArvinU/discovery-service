@@ -15,7 +15,8 @@ cd /path/to/discovery-service   # repo root (contains pom.xml + example-* folder
 
 git init
 git add .
-git commit -m "Monorepo: discovery server, examples, ProcMan"
+printf '%s\n' 'Monorepo: discovery server, examples, ProcMan' > .git_commit_msg.txt
+git commit -F .git_commit_msg.txt && rm .git_commit_msg.txt
 ```
 
 ## 3. Add remote and push
