@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Dashboard</title>
+    <!-- Frontend only: static assets. Data comes from the Java backend at ./api/status -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <h1>System Dashboard</h1>
+            <span id="instanceBadge" class="badge">--</span>
+        </header>
+        <p class="arch-hint">Frontend (static) → backend JSON API via relative <code>./api/status</code> (works through discovery proxy).</p>
+        <div class="grid">
+            <div class="card">
+                <div class="card-label">Instance ID</div>
+                <div class="card-value" id="instanceId">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Port</div>
+                <div class="card-value" id="port">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Uptime</div>
+                <div class="card-value" id="uptime">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">PID</div>
+                <div class="card-value" id="pid">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Java Version</div>
+                <div class="card-value" id="javaVersion">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">CPUs</div>
+                <div class="card-value" id="cpus">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Max Memory</div>
+                <div class="card-value" id="maxMem">--</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Free Memory</div>
+                <div class="card-value" id="freeMem">--</div>
+            </div>
+        </div>
+        <div class="footer">
+            Last updated: <span id="lastUpdated">--</span>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

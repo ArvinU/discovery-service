@@ -1,0 +1,29 @@
+{
+  "nodeId": "node-2",
+  "environment": "local",
+  "http": {
+    "port": 8600,
+    "threads": 20
+  },
+  "tcp": {
+    "port": 8601
+  },
+  "udp": {
+    "port": 8602
+  },
+  "heartbeat": {
+    "ttlMs": 90000,
+    "checkIntervalMs": 30000
+  },
+  "data": {
+    "dir": "data/local/node-2"
+  },
+  "sync": {
+    "intervalMs": 5000,
+    "timeoutMs": 5000
+  },
+  "webhooks": [],
+  "peers": [
+    "http://localhost:8500"
+  ]
+}

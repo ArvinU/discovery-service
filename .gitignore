@@ -1,0 +1,22 @@
+# Java / Maven
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+dependency-reduced-pom.xml
+
+# Node
+node_modules/
+dist/
+*.log
+npm-debug.log*
+tsconfig.tsbuildinfo
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Local discovery data (optional — remove line if you want to commit sample state)
+data/local/

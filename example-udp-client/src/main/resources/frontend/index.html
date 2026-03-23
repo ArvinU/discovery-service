@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDP registration demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <h1>UDP registration demo</h1>
+            <span class="badge badge-udp">UDP → discovery</span>
+        </header>
+        <p class="hint">Registered with discovery using the <strong>UDP</strong> port. Heartbeats use HTTP <code>POST /api/heartbeat/…</code>. UI loads data from <code>./api/status</code> (works through ProcMan proxy).</p>
+        <div class="grid">
+            <div class="card"><div class="card-label">Channel</div><div class="card-value" id="channel">--</div></div>
+            <div class="card"><div class="card-label">Instance ID</div><div class="card-value" id="instanceId">--</div></div>
+            <div class="card"><div class="card-label">Port</div><div class="card-value" id="svcPort">--</div></div>
+            <div class="card"><div class="card-label">Uptime</div><div class="card-value" id="uptime">--</div></div>
+            <div class="card"><div class="card-label">PID</div><div class="card-value" id="pid">--</div></div>
+        </div>
+        <div class="footer">Last updated: <span id="lastUpdated">--</span></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

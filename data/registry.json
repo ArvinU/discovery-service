@@ -1,0 +1,30 @@
+[
+  {
+    "instanceId": "system-dashboard-e4df884a",
+    "name": "system-dashboard",
+    "host": "localhost",
+    "port": 9002,
+    "protocol": "http",
+    "metadata": {
+      "procman": "true",
+      "description": "System Dashboard Microservice",
+      "uiPath": "/"
+    },
+    "lastHeartbeat": 1774301536016,
+    "registeredAt": 1774298805886
+  },
+  {
+    "instanceId": "system-dashboard-b76eaad4",
+    "name": "system-dashboard",
+    "host": "localhost",
+    "port": 9001,
+    "protocol": "http",
+    "metadata": {
+      "procman": "true",
+      "description": "System Dashboard Microservice",
+      "uiPath": "/"
+    },
+    "lastHeartbeat": 1774301530837,
+    "registeredAt": 1774298800687
+  }
+]
