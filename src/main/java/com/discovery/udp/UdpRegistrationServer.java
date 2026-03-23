@@ -4,6 +4,8 @@ import com.discovery.ServiceInstance;
 import com.discovery.ServiceRegistry;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -12,6 +14,10 @@ import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * UDP JSON protocol (one datagram per request/response):
+ * Same message shapes as {@link com.discovery.tcp.TcpRegistrationServer} — register / heartbeat / deregister.
+ */
 public class UdpRegistrationServer {
 
     private static final Logger LOG = Logger.getLogger(UdpRegistrationServer.class.getName());
@@ -33,7 +39,7 @@ public class UdpRegistrationServer {
         Thread thread = new Thread(() -> {
             try {
                 socket = new DatagramSocket(port);
-                LOG.info("UDP registration server listening on port " + port);
+                LOG.info("UDP protocol server listening on port " + port);
                 byte[] buf = new byte[BUFFER_SIZE];
 
                 while (running) {
@@ -42,18 +48,13 @@ public class UdpRegistrationServer {
                         socket.receive(packet);
 
                         String json = new String(packet.getData(), 0, packet.getLength(), "UTF-8");
-                        ServiceInstance instance = gson.fromJson(json, ServiceInstance.class);
-
-                        JsonObject response = new JsonObject();
-                        if (instance.getName() == null || instance.getHost() == null || instance.getPort() <= 0) {
-                            response.addProperty("error", "Invalid registration: name, host, and port are required");
-                        } else {
-                            String instanceId = registry.register(instance);
-                            response.addProperty("instanceId", instanceId);
-                            response.addProperty("name", instance.getName());
-                        }
+                        JsonObject response = handleMessage(json);
 
                         byte[] respBytes = gson.toJson(response).getBytes("UTF-8");
+                        if (respBytes.length > BUFFER_SIZE) {
+                            LOG.warning("UDP response too large, truncating");
+                            respBytes = java.util.Arrays.copyOf(respBytes, BUFFER_SIZE);
+                        }
                         InetAddress clientAddr = packet.getAddress();
                         int clientPort = packet.getPort();
                         DatagramPacket respPacket = new DatagramPacket(respBytes, respBytes.length, clientAddr, clientPort);
@@ -80,5 +81,86 @@ public class UdpRegistrationServer {
         if (socket != null) {
             socket.close();
         }
+    }
+
+    private JsonObject handleMessage(String json) {
+        JsonObject response = new JsonObject();
+        if (json == null || json.trim().isEmpty()) {
+            response.addProperty("error", "Empty body");
+            return response;
+        }
+        try {
+            JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
+            if (obj.has("op")) {
+                String op = obj.get("op").getAsString().trim().toLowerCase();
+                switch (op) {
+                    case "heartbeat":
+                        return handleHeartbeat(obj);
+                    case "deregister":
+                        return handleDeregister(obj);
+                    case "register":
+                        return handleRegisterJson(obj);
+                    default:
+                        response.addProperty("error", "Unknown op: " + op);
+                        return response;
+                }
+            }
+            return handleRegisterLegacy(json);
+        } catch (JsonSyntaxException e) {
+            response.addProperty("error", "Invalid JSON");
+            return response;
+        }
+    }
+
+    private JsonObject handleHeartbeat(JsonObject obj) {
+        JsonObject response = new JsonObject();
+        if (!obj.has("instanceId") || obj.get("instanceId").getAsString().isEmpty()) {
+            response.addProperty("error", "instanceId is required for heartbeat");
+            return response;
+        }
+        String id = obj.get("instanceId").getAsString();
+        if (registry.heartbeat(id)) {
+            response.addProperty("ok", true);
+        } else {
+            response.addProperty("error", "Instance not found: " + id);
+        }
+        return response;
+    }
+
+    private JsonObject handleDeregister(JsonObject obj) {
+        JsonObject response = new JsonObject();
+        if (!obj.has("instanceId") || obj.get("instanceId").getAsString().isEmpty()) {
+            response.addProperty("error", "instanceId is required for deregister");
+            return response;
+        }
+        String id = obj.get("instanceId").getAsString();
+        if (registry.deregister(id)) {
+            response.addProperty("ok", true);
+        } else {
+            response.addProperty("error", "Instance not found: " + id);
+        }
+        return response;
+    }
+
+    private JsonObject handleRegisterJson(JsonObject obj) {
+        ServiceInstance instance = gson.fromJson(obj, ServiceInstance.class);
+        return finishRegister(instance);
+    }
+
+    private JsonObject handleRegisterLegacy(String json) {
+        ServiceInstance instance = gson.fromJson(json, ServiceInstance.class);
+        return finishRegister(instance);
+    }
+
+    private JsonObject finishRegister(ServiceInstance instance) {
+        JsonObject response = new JsonObject();
+        if (instance.getName() == null || instance.getHost() == null || instance.getPort() <= 0) {
+            response.addProperty("error", "Invalid registration: name, host, and port are required");
+        } else {
+            String instanceId = registry.register(instance);
+            response.addProperty("instanceId", instanceId);
+            response.addProperty("name", instance.getName());
+        }
+        return response;
     }
 }

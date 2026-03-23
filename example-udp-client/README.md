@@ -1,6 +1,6 @@
 # example-udp-client
 
-Registers with **discovery’s UDP port** (one datagram of JSON), then keeps the instance alive with **HTTP** heartbeats.
+Registers with **discovery’s UDP port** (one datagram of JSON), then heartbeats with datagrams `{"op":"heartbeat","instanceId":"..."}` and deregisters with `{"op":"deregister","instanceId":"..."}` (interval: `DISCOVERY_HEARTBEAT_INTERVAL_SEC`, default 30).
 
 Serves a tiny **HTTP + static frontend** on `PORT` (default **9102**).
 
@@ -9,9 +9,9 @@ Serves a tiny **HTTP + static frontend** on `PORT` (default **9102**).
 ```bash
 mvn -q package
 
-DISCOVERY_URL=http://localhost:8500 \
 DISCOVERY_UDP_HOST=localhost \
 DISCOVERY_UDP_PORT=8502 \
+DISCOVERY_HEARTBEAT_INTERVAL_SEC=30 \
 PORT=9102 \
 java -jar target/example-udp-client-1.0.0.jar
 ```

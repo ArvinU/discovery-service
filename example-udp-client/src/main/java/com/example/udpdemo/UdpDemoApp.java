@@ -13,8 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Demo: register with discovery over <strong>UDP</strong> (JSON datagram),
- * then keep the lease with HTTP heartbeats. Serves a small HTTP UI for ProcMan proxy.
+ * Demo: register, heartbeat, and deregister with discovery only over <strong>UDP</strong>.
+ * HTTP is only for the ProcMan UI / proxy.
  */
 public class UdpDemoApp {
 
@@ -24,9 +24,9 @@ public class UdpDemoApp {
 
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(env("PORT", "9102"));
-        String discoveryUrl = env("DISCOVERY_URL", "http://localhost:8500");
         String udpHost = env("DISCOVERY_UDP_HOST", "localhost");
         int udpPort = Integer.parseInt(env("DISCOVERY_UDP_PORT", "8502"));
+        long heartbeatSec = Long.parseLong(env("DISCOVERY_HEARTBEAT_INTERVAL_SEC", "30"));
         String serviceName = env("SERVICE_NAME", "udp-demo-service");
         String host = env("SERVICE_HOST", "localhost");
 
@@ -51,7 +51,7 @@ public class UdpDemoApp {
             instanceId = "unregistered-" + port;
         }
 
-        HttpLifecycle lifecycle = new HttpLifecycle(discoveryUrl);
+        UdpDiscoveryLifecycle lifecycle = new UdpDiscoveryLifecycle(udpHost, udpPort, heartbeatSec);
         if (!instanceId.startsWith("unregistered-")) {
             lifecycle.start(instanceId);
         }
@@ -64,7 +64,7 @@ public class UdpDemoApp {
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
 
-        LOG.info("UDP demo HTTP UI on port " + port + " — ProcMan filter: procman=true");
+        LOG.info("UDP demo HTTP UI on port " + port + " — discovery traffic uses UDP " + udpHost + ":" + udpPort);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.stop(2);

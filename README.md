@@ -269,7 +269,16 @@ All endpoints are served on the configured HTTP port (default 8500).
 | `GET` | `/api/sync/state` | Returns this node's full registry state for peer sync. |
 | `POST` | `/api/sync/event` | Receives a change event from a peer. Body: `{sourceNodeId, eventType, instance}`. |
 
-TCP registration is available on the configured TCP port and UDP on the configured UDP port. Both accept the same JSON body as `POST /api/register` and return `{instanceId}`.
+**TCP** (configured `tcp.port`) and **UDP** (`udp.port`) share the same JSON protocol:
+
+| Message | JSON body | Response |
+|---|---|---|
+| Register (legacy) | Same object as `POST /api/register` — no `op` field | `{instanceId, name}` or `{error}` |
+| Register (explicit) | `{"op":"register", "name", "host", "port", ...}` | same |
+| Heartbeat | `{"op":"heartbeat","instanceId":"..."}` | `{ok:true}` or `{error}` |
+| Deregister | `{"op":"deregister","instanceId":"..."}` | `{ok:true}` or `{error}` |
+
+**TCP:** one request per connection — send JSON, half-close output (`shutdownOutput`), read response until EOF. **UDP:** one datagram per request; response is one datagram (keep payloads small).
 
 ---
 

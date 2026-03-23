@@ -65,12 +65,12 @@ public class DiscoveryServer {
         int tcpPort = config.getTcp().getPort();
         TcpRegistrationServer tcpServer = new TcpRegistrationServer(tcpPort, registry);
         tcpServer.start();
-        LOG.info("TCP registration server started on port " + tcpPort);
+        LOG.info("TCP protocol server started on port " + tcpPort);
 
         int udpPort = config.getUdp().getPort();
         UdpRegistrationServer udpServer = new UdpRegistrationServer(udpPort, registry);
         udpServer.start();
-        LOG.info("UDP registration server started on port " + udpPort);
+        LOG.info("UDP protocol server started on port " + udpPort);
 
         long ttlMs = config.getHeartbeat().getTtlMs();
         long checkMs = config.getHeartbeat().getCheckIntervalMs();

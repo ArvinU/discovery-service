@@ -13,8 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Demo: register with discovery over <strong>TCP</strong> (JSON to discovery's TCP port),
- * then keep the lease with HTTP heartbeats. Serves a small HTTP UI for ProcMan proxy.
+ * Demo: register, heartbeat, and deregister with discovery only over <strong>TCP</strong>.
+ * The HTTP server here is only for the ProcMan UI / proxy, not for discovery.
  */
 public class TcpDemoApp {
 
@@ -24,9 +24,9 @@ public class TcpDemoApp {
 
     public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(env("PORT", "9101"));
-        String discoveryUrl = env("DISCOVERY_URL", "http://localhost:8500");
         String tcpHost = env("DISCOVERY_TCP_HOST", "localhost");
         int tcpPort = Integer.parseInt(env("DISCOVERY_TCP_PORT", "8501"));
+        long heartbeatSec = Long.parseLong(env("DISCOVERY_HEARTBEAT_INTERVAL_SEC", "30"));
         String serviceName = env("SERVICE_NAME", "tcp-demo-service");
         String host = env("SERVICE_HOST", "localhost");
 
@@ -51,7 +51,7 @@ public class TcpDemoApp {
             instanceId = "unregistered-" + port;
         }
 
-        HttpLifecycle lifecycle = new HttpLifecycle(discoveryUrl);
+        TcpDiscoveryLifecycle lifecycle = new TcpDiscoveryLifecycle(tcpHost, tcpPort, heartbeatSec);
         if (!instanceId.startsWith("unregistered-")) {
             lifecycle.start(instanceId);
         }
@@ -64,7 +64,7 @@ public class TcpDemoApp {
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
 
-        LOG.info("TCP demo HTTP UI on port " + port + " — ProcMan filter: procman=true");
+        LOG.info("TCP demo HTTP UI on port " + port + " — discovery traffic uses TCP " + tcpHost + ":" + tcpPort);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.stop(2);

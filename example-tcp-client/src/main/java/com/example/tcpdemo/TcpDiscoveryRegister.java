@@ -1,5 +1,6 @@
 package com.example.tcpdemo;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -11,14 +12,52 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Sends JSON registration to discovery's TCP port (same payload as HTTP /api/register body).
- * Client must {@link Socket#shutdownOutput()} so the server reads until EOF.
+ * Discovery TCP port: register, heartbeat, and deregister (same JSON protocol as the server).
  */
 public final class TcpDiscoveryRegister {
+
+    private static final Gson GSON = new Gson();
 
     private TcpDiscoveryRegister() {}
 
     public static String register(String host, int tcpPort, String jsonBody) throws IOException {
+        JsonObject r = tcpRoundTrip(host, tcpPort, jsonBody);
+        if (r.has("error")) {
+            throw new IOException(r.get("error").getAsString());
+        }
+        if (!r.has("instanceId")) {
+            throw new IOException("Invalid TCP response: " + r);
+        }
+        return r.get("instanceId").getAsString();
+    }
+
+    public static void heartbeat(String host, int tcpPort, String instanceId) throws IOException {
+        JsonObject req = new JsonObject();
+        req.addProperty("op", "heartbeat");
+        req.addProperty("instanceId", instanceId);
+        JsonObject r = tcpRoundTrip(host, tcpPort, GSON.toJson(req));
+        if (r.has("error")) {
+            throw new IOException(r.get("error").getAsString());
+        }
+        if (!r.has("ok") || !r.get("ok").getAsBoolean()) {
+            throw new IOException("Unexpected response: " + r);
+        }
+    }
+
+    public static void deregister(String host, int tcpPort, String instanceId) throws IOException {
+        JsonObject req = new JsonObject();
+        req.addProperty("op", "deregister");
+        req.addProperty("instanceId", instanceId);
+        JsonObject r = tcpRoundTrip(host, tcpPort, GSON.toJson(req));
+        if (r.has("error")) {
+            throw new IOException(r.get("error").getAsString());
+        }
+        if (!r.has("ok") || !r.get("ok").getAsBoolean()) {
+            throw new IOException("Unexpected response: " + r);
+        }
+    }
+
+    private static JsonObject tcpRoundTrip(String host, int tcpPort, String jsonBody) throws IOException {
         try (Socket socket = new Socket(host, tcpPort)) {
             socket.setSoTimeout(15000);
             OutputStream out = socket.getOutputStream();
@@ -35,14 +74,7 @@ public final class TcpDiscoveryRegister {
             }
 
             String resp = new String(bos.toByteArray(), StandardCharsets.UTF_8);
-            JsonObject o = JsonParser.parseString(resp).getAsJsonObject();
-            if (o.has("error")) {
-                throw new IOException(o.get("error").getAsString());
-            }
-            if (!o.has("instanceId")) {
-                throw new IOException("Invalid TCP response: " + resp);
-            }
-            return o.get("instanceId").getAsString();
+            return JsonParser.parseString(resp).getAsJsonObject();
         }
     }
 }
