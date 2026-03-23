@@ -4,8 +4,8 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1 className="app-title">ProcMan</h1>
-        <span className="app-subtitle">Process Manager</span>
+        <h1 className="app-title">TestMan</h1>
+        <span className="app-subtitle">Service test host</span>
       </header>
       <main className="app-main">
         <ServiceTabs />

@@ -11,9 +11,9 @@ export function ServicePanel({ group }: Props) {
   const [selectedInstanceId, setSelectedInstanceId] = useState(
     group.instances[0]?.instanceId || ''
   );
-  const [procmanInfo, setProcmanInfo] = useState<string | null>(null);
-  const [procmanInfoLoading, setProcmanInfoLoading] = useState(false);
-  const [procmanInfoError, setProcmanInfoError] = useState<string | null>(null);
+  const [testInfo, setTestInfo] = useState<string | null>(null);
+  const [testInfoLoading, setTestInfoLoading] = useState(false);
+  const [testInfoError, setTestInfoError] = useState<string | null>(null);
 
   useEffect(() => {
     const stillExists = group.instances.some(
@@ -25,27 +25,32 @@ export function ServicePanel({ group }: Props) {
   }, [group.instances, selectedInstanceId]);
 
   useEffect(() => {
-    setProcmanInfo(null);
-    setProcmanInfoError(null);
+    setTestInfo(null);
+    setTestInfoError(null);
   }, [selectedInstanceId]);
 
-  async function fetchProcmanInfo() {
+  async function fetchTestInfo() {
     if (!selectedInstanceId) return;
-    setProcmanInfoLoading(true);
-    setProcmanInfoError(null);
-    setProcmanInfo(null);
+    setTestInfoLoading(true);
+    setTestInfoError(null);
+    setTestInfo(null);
     try {
-      const url = getProxiedServiceUrl(selectedInstanceId, '/api/procman-info');
+      const url = getProxiedServiceUrl(selectedInstanceId, '/api/test-info');
       const res = await fetch(url);
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        const body = (await res.text()).trim();
+        const hint =
+          body.length > 0
+            ? ` — ${body.length > 240 ? `${body.slice(0, 240)}…` : body}`
+            : '';
+        throw new Error(`HTTP ${res.status}${hint}`);
       }
       const data = await res.json();
-      setProcmanInfo(JSON.stringify(data, null, 2));
+      setTestInfo(JSON.stringify(data, null, 2));
     } catch (e) {
-      setProcmanInfoError(e instanceof Error ? e.message : 'Request failed');
+      setTestInfoError(e instanceof Error ? e.message : 'Request failed');
     } finally {
-      setProcmanInfoLoading(false);
+      setTestInfoLoading(false);
     }
   }
 
@@ -62,22 +67,22 @@ export function ServicePanel({ group }: Props) {
         selectedId={selectedInstanceId}
         onSelect={setSelectedInstanceId}
       />
-      <div className="procman-service-toolbar">
+      <div className="test-service-toolbar">
         <button
           type="button"
-          className="procman-info-btn"
-          onClick={() => void fetchProcmanInfo()}
-          disabled={procmanInfoLoading}
+          className="test-info-btn"
+          onClick={() => void fetchTestInfo()}
+          disabled={testInfoLoading}
         >
-          {procmanInfoLoading ? 'Loading…' : 'Get info from service'}
+          {testInfoLoading ? 'Loading…' : 'Get info from service'}
         </button>
-        <span className="procman-info-hint">GET /api/procman-info via discovery proxy</span>
+        <span className="test-info-hint">GET /api/test-info via discovery proxy</span>
       </div>
-      {procmanInfoError && (
-        <div className="procman-info-error">{procmanInfoError}</div>
+      {testInfoError && (
+        <div className="test-info-error">{testInfoError}</div>
       )}
-      {procmanInfo && (
-        <pre className="procman-info-json">{procmanInfo}</pre>
+      {testInfo && (
+        <pre className="test-info-json">{testInfo}</pre>
       )}
       <iframe
         key={selectedInstanceId}

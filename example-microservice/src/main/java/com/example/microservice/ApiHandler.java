@@ -23,10 +23,6 @@ public class ApiHandler implements HttpHandler {
         this.startTime = System.currentTimeMillis();
     }
 
-    public void setInstanceId(String instanceId) {
-        // Allow updating after discovery registration
-    }
-
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
@@ -39,50 +35,29 @@ public class ApiHandler implements HttpHandler {
             return;
         }
 
-        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        String path = stripTrailingSlash(exchange.getRequestURI().getPath());
 
-        String path = exchange.getRequestURI().getPath();
-
-        if ("/api/status".equals(path) && "GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            handleStatus(exchange);
-        } else if ("/api/procman-info".equals(path) && "GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            handleProcmanInfo(exchange);
+        if ("/api/status".equals(path)) {
+            sendJson(exchange, 200, gson.toJson(buildStatus()));
+        } else if ("/api/test-info".equals(path)) {
+            sendJson(exchange, 200, gson.toJson(buildTestInfo()));
         } else {
-            String json = "{\"error\":\"Not found\"}";
-            byte[] bytes = json.getBytes("UTF-8");
-            exchange.sendResponseHeaders(404, bytes.length);
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(bytes);
-            }
+            sendJson(exchange, 404, "{\"error\":\"Not found\"}");
         }
-        exchange.close();
     }
 
-    /**
-     * Simple JSON for ProcMan (parent app) to fetch via discovery proxy.
-     * GET /api/procman-info
-     */
-    private void handleProcmanInfo(HttpExchange exchange) throws IOException {
+    private Map<String, Object> buildTestInfo() {
         long uptimeSec = (System.currentTimeMillis() - startTime) / 1000;
-
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("instanceId", instanceId);
         info.put("port", port);
         info.put("uptimeSeconds", uptimeSec);
         info.put("message", "Hello from instance " + instanceId + " on port " + port);
-
-        String json = gson.toJson(info);
-        byte[] bytes = json.getBytes("UTF-8");
-        exchange.sendResponseHeaders(200, bytes.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(bytes);
-        }
+        return info;
     }
 
-    private void handleStatus(HttpExchange exchange) throws IOException {
-        long uptimeMs = System.currentTimeMillis() - startTime;
-        long uptimeSec = uptimeMs / 1000;
-
+    private Map<String, Object> buildStatus() {
+        long uptimeSec = (System.currentTimeMillis() - startTime) / 1000;
         Map<String, Object> status = new LinkedHashMap<>();
         status.put("instanceId", instanceId);
         status.put("port", port);
@@ -93,13 +68,24 @@ public class ApiHandler implements HttpHandler {
         status.put("maxMemoryMB", Runtime.getRuntime().maxMemory() / (1024 * 1024));
         status.put("freeMemoryMB", Runtime.getRuntime().freeMemory() / (1024 * 1024));
         status.put("pid", ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+        return status;
+    }
 
-        String json = gson.toJson(status);
+    private static void sendJson(HttpExchange exchange, int code, String json) throws IOException {
         byte[] bytes = json.getBytes("UTF-8");
-        exchange.sendResponseHeaders(200, bytes.length);
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        exchange.sendResponseHeaders(code, bytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
         }
+        exchange.close();
+    }
+
+    private static String stripTrailingSlash(String path) {
+        if (path != null && path.length() > 1 && path.endsWith("/")) {
+            return path.substring(0, path.length() - 1);
+        }
+        return path;
     }
 
     private static String formatUptime(long seconds) {
@@ -107,13 +93,9 @@ public class ApiHandler implements HttpHandler {
         long hours = (seconds % 86400) / 3600;
         long mins = (seconds % 3600) / 60;
         long secs = seconds % 60;
-        if (days > 0) {
-            return days + "d " + hours + "h " + mins + "m " + secs + "s";
-        } else if (hours > 0) {
-            return hours + "h " + mins + "m " + secs + "s";
-        } else if (mins > 0) {
-            return mins + "m " + secs + "s";
-        }
+        if (days > 0) return days + "d " + hours + "h " + mins + "m " + secs + "s";
+        if (hours > 0) return hours + "h " + mins + "m " + secs + "s";
+        if (mins > 0) return mins + "m " + secs + "s";
         return secs + "s";
     }
 }

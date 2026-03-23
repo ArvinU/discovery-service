@@ -6,11 +6,8 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class StaticFileHandler implements HttpHandler {
-
-    private static final Logger LOG = Logger.getLogger(StaticFileHandler.class.getName());
 
     private static final Map<String, String> MIME_TYPES = new HashMap<>();
 
@@ -21,12 +18,8 @@ public class StaticFileHandler implements HttpHandler {
         MIME_TYPES.put("json", "application/json; charset=utf-8");
         MIME_TYPES.put("png", "image/png");
         MIME_TYPES.put("jpg", "image/jpeg");
-        MIME_TYPES.put("jpeg", "image/jpeg");
         MIME_TYPES.put("svg", "image/svg+xml");
         MIME_TYPES.put("ico", "image/x-icon");
-        MIME_TYPES.put("woff", "font/woff");
-        MIME_TYPES.put("woff2", "font/woff2");
-        MIME_TYPES.put("ttf", "font/ttf");
     }
 
     private final String resourceBase;
@@ -50,8 +43,9 @@ public class StaticFileHandler implements HttpHandler {
             is = getClass().getClassLoader().getResourceAsStream(resourceBase + "index.html");
             if (is == null) {
                 String msg = "Not found";
-                exchange.sendResponseHeaders(404, msg.length());
-                exchange.getResponseBody().write(msg.getBytes());
+                byte[] bytes = msg.getBytes("UTF-8");
+                exchange.sendResponseHeaders(404, bytes.length);
+                exchange.getResponseBody().write(bytes);
                 exchange.close();
                 return;
             }

@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 /**
  * Example microservice: small JSON {@linkplain ApiHandler backend} + static {@code frontend/} UI
  * served by one process. The UI calls the API with relative URLs so it works behind the discovery
- * reverse proxy ({@code /proxy/{instanceId}/...}).
+ * reverse proxy ({@code /proxy/{instanceId}/...}) for TestMan.
  */
 public class MicroserviceApp {
 
@@ -29,7 +29,7 @@ public class MicroserviceApp {
         String description = getConfig("SERVICE_DESCRIPTION", "System Dashboard Microservice");
 
         Map<String, String> metadata = new HashMap<>();
-        metadata.put("procman", "true");
+        metadata.put("testman", "true");
         metadata.put("uiPath", "/");
         metadata.put("description", description);
 

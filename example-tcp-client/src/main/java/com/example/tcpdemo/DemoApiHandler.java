@@ -42,8 +42,8 @@ public class DemoApiHandler implements HttpHandler {
 
         if ("/api/status".equals(path) && "GET".equalsIgnoreCase(exchange.getRequestMethod())) {
             handleStatus(exchange);
-        } else if ("/api/procman-info".equals(path) && "GET".equalsIgnoreCase(exchange.getRequestMethod())) {
-            handleProcmanInfo(exchange);
+        } else if ("/api/test-info".equals(path) && "GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+            handleTestInfo(exchange);
         } else {
             byte[] bytes = "{\"error\":\"Not found\"}".getBytes("UTF-8");
             exchange.sendResponseHeaders(404, bytes.length);
@@ -54,7 +54,7 @@ public class DemoApiHandler implements HttpHandler {
         exchange.close();
     }
 
-    private void handleProcmanInfo(HttpExchange exchange) throws IOException {
+    private void handleTestInfo(HttpExchange exchange) throws IOException {
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("registrationChannel", registrationChannel);
         info.put("instanceId", instanceId);

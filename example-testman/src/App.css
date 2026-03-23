@@ -164,7 +164,7 @@ body {
   color: #484f58;
 }
 
-.procman-service-toolbar {
+.test-service-toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -174,7 +174,7 @@ body {
   border-bottom: 1px solid #21262d;
 }
 
-.procman-info-btn {
+.test-info-btn {
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 500;
@@ -186,22 +186,22 @@ body {
   transition: background 0.15s;
 }
 
-.procman-info-btn:hover:not(:disabled) {
+.test-info-btn:hover:not(:disabled) {
   background: #2ea043;
 }
 
-.procman-info-btn:disabled {
+.test-info-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.procman-info-hint {
+.test-info-hint {
   font-size: 11px;
   color: #484f58;
   font-family: 'SF Mono', Monaco, monospace;
 }
 
-.procman-info-error {
+.test-info-error {
   margin: 0 24px 8px;
   padding: 8px 12px;
   font-size: 12px;
@@ -211,7 +211,7 @@ body {
   border: 1px solid #f8514940;
 }
 
-.procman-info-json {
+.test-info-json {
   margin: 0 24px 8px;
   padding: 12px 14px;
   font-size: 12px;

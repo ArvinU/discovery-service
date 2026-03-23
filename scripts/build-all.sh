@@ -15,9 +15,9 @@ mvn -q -f "$ROOT/example-tcp-client/pom.xml" package
 echo "== example-udp-client =="
 mvn -q -f "$ROOT/example-udp-client/pom.xml" package
 
-echo "== example-procman (npm) =="
-cd "$ROOT/example-procman"
+echo "== example-testman (npm) =="
+cd "$ROOT/example-testman"
 if [[ ! -d node_modules ]]; then npm install; fi
 npm run build
 
-echo "Done. JARs under each */target/ and ProcMan in example-procman/dist/"
+echo "Done. JARs under each */target/ and TestMan in example-testman/dist/"

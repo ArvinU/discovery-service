@@ -34,12 +34,13 @@ public class ServiceRegistry {
         void onChange(ChangeEvent event);
     }
 
-    public ServiceRegistry(String dataDir, String nodeId) {
+    public ServiceRegistry(String dataDir, String nodeId, long ttlMs) {
         this.dataDir = dataDir;
         this.nodeId = nodeId;
         this.gson = new GsonBuilder().setPrettyPrinting().create();
         new File(dataDir).mkdirs();
         loadFromFile();
+        pruneExpired(ttlMs);
 
         flushScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "registry-flush");
@@ -59,6 +60,24 @@ public class ServiceRegistry {
     }
 
     public String register(ServiceInstance instance) {
+        // Remove any existing instance on the same name+host+port (handles restarts)
+        String staleId = null;
+        for (ServiceInstance existing : instances.values()) {
+            if (existing.getName().equals(instance.getName())
+                    && existing.getHost().equals(instance.getHost())
+                    && existing.getPort() == instance.getPort()) {
+                staleId = existing.getInstanceId();
+                break;
+            }
+        }
+        if (staleId != null) {
+            ServiceInstance removed = instances.remove(staleId);
+            if (removed != null) {
+                LOG.info("Replaced stale instance on same host:port: " + removed);
+                fireEvent(ChangeEvent.EventType.DEREGISTER, removed, false);
+            }
+        }
+
         String instanceId = ServiceInstance.generateInstanceId(instance.getName());
         instance.setInstanceId(instanceId);
         instance.setRegisteredAt(System.currentTimeMillis());
@@ -213,6 +232,25 @@ public class ServiceRegistry {
             } catch (Exception e) {
                 LOG.log(Level.WARNING, "Listener error", e);
             }
+        }
+    }
+
+    private void pruneExpired(long ttlMs) {
+        long now = System.currentTimeMillis();
+        List<String> expired = new ArrayList<>();
+        for (Map.Entry<String, ServiceInstance> entry : instances.entrySet()) {
+            if ((now - entry.getValue().getLastHeartbeat()) > ttlMs) {
+                expired.add(entry.getKey());
+            }
+        }
+        for (String id : expired) {
+            ServiceInstance removed = instances.remove(id);
+            if (removed != null) {
+                LOG.info("Pruned expired instance on startup: " + removed);
+            }
+        }
+        if (!expired.isEmpty()) {
+            dirty = true;
         }
     }
 

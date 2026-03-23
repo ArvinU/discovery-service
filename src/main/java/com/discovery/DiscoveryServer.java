@@ -35,7 +35,8 @@ public class DiscoveryServer {
         String dataDir = config.getData().getDir();
         String nodeId = config.getNodeId();
 
-        ServiceRegistry registry = new ServiceRegistry(dataDir, nodeId);
+        long ttlMs = config.getHeartbeat().getTtlMs();
+        ServiceRegistry registry = new ServiceRegistry(dataDir, nodeId, ttlMs);
 
         WebhookNotifier webhookNotifier = new WebhookNotifier(dataDir);
         registry.addChangeListener(webhookNotifier);
@@ -72,7 +73,6 @@ public class DiscoveryServer {
         udpServer.start();
         LOG.info("UDP protocol server started on port " + udpPort);
 
-        long ttlMs = config.getHeartbeat().getTtlMs();
         long checkMs = config.getHeartbeat().getCheckIntervalMs();
         HeartbeatMonitor monitor = new HeartbeatMonitor(registry, ttlMs, checkMs);
         monitor.start();

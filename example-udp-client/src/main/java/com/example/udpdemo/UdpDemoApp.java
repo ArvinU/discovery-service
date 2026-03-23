@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 /**
  * Demo: register, heartbeat, and deregister with discovery only over <strong>UDP</strong>.
- * HTTP is only for the ProcMan UI / proxy.
+ * HTTP is only for the TestMan UI / proxy.
  */
 public class UdpDemoApp {
 
@@ -31,7 +31,7 @@ public class UdpDemoApp {
         String host = env("SERVICE_HOST", "localhost");
 
         Map<String, String> metadata = new HashMap<>();
-        metadata.put("procman", "true");
+        metadata.put("testman", "true");
         metadata.put("uiPath", "/");
         metadata.put("description", "UDP registration demo");
 
@@ -64,7 +64,7 @@ public class UdpDemoApp {
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
 
-        LOG.info("UDP demo HTTP UI on port " + port + " — discovery traffic uses UDP " + udpHost + ":" + udpPort);
+        LOG.info("UDP demo HTTP UI on port " + port + " — discovery uses UDP " + udpHost + ":" + udpPort + "; TestMan lists testman=true");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.stop(2);

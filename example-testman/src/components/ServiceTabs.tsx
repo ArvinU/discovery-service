@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ServiceGroup } from '../types';
-import { fetchProcmanServices } from '../services/discoveryClient';
+import { fetchTestmanServices } from '../services/discoveryClient';
 import { ServicePanel } from './ServicePanel';
 
 const POLL_INTERVAL = 5000;
@@ -13,7 +13,7 @@ export function ServiceTabs() {
 
   const poll = useCallback(async () => {
     try {
-      const data = await fetchProcmanServices();
+      const data = await fetchTestmanServices();
       setGroups(data.groups);
       setError(null);
 
@@ -52,7 +52,7 @@ export function ServiceTabs() {
   if (groups.length === 0) {
     return (
       <div className="status-message">
-        No procman services registered. Start a microservice with procman=true to see it here.
+        No testman services registered. Start a microservice with metadata testman=true to see it here.
       </div>
     );
   }

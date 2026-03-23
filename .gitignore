@@ -20,3 +20,4 @@ tsconfig.tsbuildinfo
 
 # Local discovery data (optional — remove line if you want to commit sample state)
 data/local/
+data/test-run-tmp/

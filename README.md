@@ -1,6 +1,6 @@
 # Discovery Service
 
-A lightweight service discovery platform written in Java 1.8 with a single dependency (Gson). Microservices register themselves over HTTP, TCP, or UDP. A built-in reverse proxy serves registered UIs through a single origin, enabling microfrontend injection into host applications like ProcMan.
+A lightweight service discovery platform written in Java 1.8 with a single dependency (Gson). Microservices register themselves over HTTP, TCP, or UDP. A built-in reverse proxy serves registered UIs through a single origin, enabling microfrontend injection into host applications like TestMan.
 
 ## Monorepo layout
 
@@ -9,11 +9,11 @@ Everything lives in **one repository** (this folder):
 | Directory | Purpose |
 |---|---|
 | *(repo root)* | **Discovery server** — `pom.xml`, `src/`, `config/` |
-| `example-microservice/` | Registers over **HTTP**; dashboard UI + `./api/status` |
+| `example-microservice/` | Registers over **HTTP**; dashboard UI + JSON `/api/status` (paths built to work behind `/proxy/{id}/` with or without a trailing slash) |
 | `example-tcp-client/` | Registers over **TCP**; small UI on port 9101 |
 | `example-udp-client/` | Registers over **UDP**; small UI on port 9102 |
-| `example-procman/` | Vite + React **ProcMan** host (`procman=true` services as tabs) |
-| `scripts/build-all.sh` | Builds all Java JARs + ProcMan |
+| `example-testman/` | Vite + React **TestMan** host (`testman=true` services as tabs) |
+| `scripts/build-all.sh` | Builds all Java JARs + TestMan |
 | `docs/GITHUB.md` | How to **push to a new GitHub repo** |
 
 ## Quick Start
@@ -23,7 +23,7 @@ Everything lives in **one repository** (this folder):
 ```bash
 cd /path/to/this-repo
 
-# Build everything (or: mvn package in each Java module + npm in example-procman)
+# Build everything (or: mvn package in each Java module + npm in example-testman)
 chmod +x scripts/build-all.sh && ./scripts/build-all.sh
 
 # Terminal 1 — discovery
@@ -40,11 +40,11 @@ cd example-tcp-client && java -jar target/example-tcp-client-1.0.0.jar
 # Terminal 5 — UDP demo (default discovery UDP 8502)
 cd example-udp-client && java -jar target/example-udp-client-1.0.0.jar
 
-# Terminal 6 — ProcMan
-cd example-procman && npm install && npm run dev
+# Terminal 6 — TestMan
+cd example-testman && npm install && npm run dev
 ```
 
-Open `http://localhost:3000`. You should see tabs for **system-dashboard** (2 instances), **tcp-demo-service**, and **udp-demo-service**, each with a proxy iframe. Use **Get info from service** to hit `./api/procman-info` through the proxy.
+Open `http://localhost:3000`. You should see tabs for **system-dashboard** (2 instances), **tcp-demo-service**, and **udp-demo-service**, each with a proxy iframe. Use **Get info from service** to hit `./api/test-info` through the proxy.
 
 Optional second discovery node:  
 `java -jar target/discovery-service-1.0.0.jar --config config/local/node-2.json`
@@ -71,7 +71,7 @@ Content-Type: application/json
   "port": 9001,
   "protocol": "http",
   "metadata": {
-    "procman": "true",
+    "testman": "true",
     "uiPath": "/",
     "description": "System Dashboard"
   }
@@ -92,7 +92,7 @@ This is the core mechanism that makes microfrontend injection possible without t
 http://discovery:8500/proxy/{instanceId}/{path}
 ```
 
-When ProcMan (or any consumer) requests:
+When TestMan (or any consumer) requests:
 
 ```
 GET http://localhost:8500/proxy/system-dashboard-a1b2c3d4/
@@ -105,12 +105,12 @@ The discovery service:
 3. Forwards the request to `http://192.168.1.10:9001/`
 4. Streams the response (HTML, CSS, JS, images) back to the caller with correct content types
 
-This means ProcMan never contacts the microservice directly. It only talks to the discovery service, which proxies everything -- HTML pages, JavaScript files, CSS stylesheets, API calls, and any other assets. The microservice's UI is "injected" into ProcMan through an iframe whose `src` points at the proxy URL.
+This means TestMan never contacts the microservice directly. It only talks to the discovery service, which proxies everything -- HTML pages, JavaScript files, CSS stylesheets, API calls, and any other assets. The microservice's UI is "injected" into TestMan through an iframe whose `src` points at the proxy URL.
 
 **Proxy flow for a full page load:**
 
 ```
-ProcMan iframe
+TestMan iframe
   |
   |-- GET /proxy/{id}/              --> discovery proxies --> microservice returns index.html
   |-- GET /proxy/{id}/style.css     --> discovery proxies --> microservice returns style.css
@@ -122,7 +122,7 @@ Every sub-request (scripts, stylesheets, API calls) from the iframe goes through
 
 ### API Endpoint Injection
 
-The same proxy handles API calls. The example microservice serves a `/api/status` endpoint. When its UI (running inside ProcMan's iframe) calls:
+The same proxy handles API calls. The example microservice serves a `/api/status` endpoint. When its UI (running inside TestMan's iframe) calls:
 
 ```javascript
 fetch(window.location.origin + '/api/status')
@@ -141,7 +141,7 @@ This means a microservice's backend API is also injected -- the frontend running
 After starting the discovery service and microservice instances, confirm they registered:
 
 ```bash
-curl http://localhost:8500/api/services?procman=true
+curl http://localhost:8500/api/services?testman=true
 ```
 
 Expected response -- instances grouped by service name:
@@ -157,13 +157,13 @@ Expected response -- instances grouped by service name:
           "instanceId": "system-dashboard-a1b2c3d4",
           "host": "localhost",
           "port": 9001,
-          "metadata": { "procman": "true", "uiPath": "/" }
+          "metadata": { "testman": "true", "uiPath": "/" }
         },
         {
           "instanceId": "system-dashboard-e5f6g7h8",
           "host": "localhost",
           "port": 9002,
-          "metadata": { "procman": "true", "uiPath": "/" }
+          "metadata": { "testman": "true", "uiPath": "/" }
         }
       ]
     }
@@ -173,7 +173,7 @@ Expected response -- instances grouped by service name:
 
 ### Step 2: Test UI Injection Through the Proxy
 
-Fetch the microservice's HTML through the proxy -- this is exactly what ProcMan's iframe does:
+Fetch the microservice's HTML through the proxy -- this is exactly what TestMan's iframe does:
 
 ```bash
 # Fetch the UI HTML through the proxy
@@ -221,13 +221,17 @@ curl http://localhost:8500/proxy/system-dashboard-e5f6g7h8/api/status
 
 This returns different values for `instanceId`, `port`, and `pid`, proving each proxy path routes to the correct backend instance.
 
-### Step 4: Test Dynamic Discovery in ProcMan
+### Step 4: Test Dynamic Discovery in TestMan
 
-1. Open `http://localhost:3000` -- ProcMan shows a "System Dashboard" tab with instance count "2"
+1. Open `http://localhost:3000` -- TestMan shows a "System Dashboard" tab with instance count "2"
 2. The instance dropdown lists both instances with their host:port
 3. Selecting an instance reloads the iframe, showing that instance's data (different PID, port, uptime)
-4. Kill one microservice instance -- after 90 seconds, ProcMan's dropdown updates to show only the surviving instance
-5. Start a new instance on port 9003 -- within 5 seconds, ProcMan's dropdown adds it
+4. Kill one microservice instance -- after 90 seconds, TestMan's dropdown updates to show only the surviving instance
+5. Start a new instance on port 9003 -- within 5 seconds, TestMan's dropdown adds it
+
+**TestMan `HTTP 404` with body `{"error":"Not found"}`** — Discovery serves the JSON API under `/api/*` and the reverse proxy under `/proxy/*`. If `VITE_DISCOVERY_URL` is set to `http://localhost:8500/api`, the app will call `http://localhost:8500/api/proxy/...`, which is **not** the proxy (it hits the API router and returns 404). Use the **base URL only**: `http://localhost:8500` (no `/api`). The TestMan client also strips a mistaken `/api` suffix automatically.
+
+**Example microservice `HTTP 404` with `{"error":"Not found"}` on `/api/*`** — Fixed in the example app by (1) normalizing paths in the HTTP dispatcher so requests like `//api/status` still route to the JSON handler, (2) treating **HEAD** like **GET** for `/api/status` and `/api/test-info`, and (3) resolving API and static asset URLs from the current pathname so a proxy URL **without** a trailing slash (e.g. `.../proxy/{id}`) still maps to `.../proxy/{id}/api/status` instead of `.../proxy/api/status`.
 
 ### Step 5: Test Heartbeat Eviction
 
@@ -235,14 +239,14 @@ This returns different values for `instanceId`, `port`, and `pid`, proving each 
 # Register a temporary service manually
 curl -X POST http://localhost:8500/api/register \
   -H "Content-Type: application/json" \
-  -d '{"name":"temp-service","host":"localhost","port":9999,"metadata":{"procman":"true"}}'
+  -d '{"name":"temp-service","host":"localhost","port":9999,"metadata":{"testman":"true"}}'
 
 # Verify it appears
-curl http://localhost:8500/api/services?procman=true
+curl http://localhost:8500/api/services?testman=true
 
 # Wait 90+ seconds without sending heartbeats, then check again
 sleep 95
-curl http://localhost:8500/api/services?procman=true
+curl http://localhost:8500/api/services?testman=true
 # temp-service is gone -- evicted by the heartbeat monitor
 ```
 
@@ -258,7 +262,7 @@ All endpoints are served on the configured HTTP port (default 8500).
 | `DELETE` | `/api/deregister/{instanceId}` | Remove a specific instance. |
 | `POST` | `/api/heartbeat/{instanceId}` | Refresh heartbeat timestamp. Send every 30s. |
 | `GET` | `/api/services` | List all services, grouped by name. |
-| `GET` | `/api/services?procman=true` | Filter by metadata key/value. |
+| `GET` | `/api/services?testman=true` | Filter by metadata key/value. |
 | `GET` | `/api/services?name=system-dashboard` | Filter by service name. |
 | `GET` | `/api/instances/{instanceId}` | Get a single instance. |
 | `GET` | `/api/health` | Health check. Returns `{status, nodeId, environment, registeredInstances, peers, timestamp}`. |
@@ -378,7 +382,7 @@ curl -X POST http://localhost:8500/api/webhooks \
     "host": "192.168.1.10",
     "port": 9001,
     "protocol": "http",
-    "metadata": { "procman": "true", "uiPath": "/" }
+    "metadata": { "testman": "true", "uiPath": "/" }
   },
   "allInstancesForService": [
     { "instanceId": "system-dashboard-a1b2c3d4", "host": "192.168.1.10", "port": 9001 },
@@ -453,7 +457,7 @@ The registry distinguishes between **service name** (logical type, e.g. `system-
 - Running N instances of the same service across different servers
 - Each instance registering with its own host and port
 - Consumers querying by service name and receiving all instances
-- ProcMan showing one tab per service type with a dropdown to pick an instance
+- TestMan showing one tab per service type with a dropdown to pick an instance
 
 **Example: 3 instances across 2 servers**
 
@@ -466,13 +470,13 @@ DISCOVERY_URL=http://discovery:8500 SERVICE_HOST=192.168.1.10 PORT=9002 java -ja
 DISCOVERY_URL=http://discovery:8500 SERVICE_HOST=192.168.1.11 PORT=9001 java -jar example-microservice-1.0.0.jar
 ```
 
-All three register as `system-dashboard` with their respective host:port. The discovery service groups them under one name, and ProcMan shows a single tab with a 3-item dropdown.
+All three register as `system-dashboard` with their respective host:port. The discovery service groups them under one name, and TestMan shows a single tab with a 3-item dropdown.
 
 ---
 
 ## Building Your Own Microservice
 
-To create a new microservice that integrates with ProcMan:
+To create a new microservice that integrates with TestMan:
 
 1. **Serve a UI** on your HTTP port (static files, SPA, or server-rendered)
 2. **Use relative paths** in your HTML (`href="style.css"` not `href="/style.css"`) so assets resolve correctly through the proxy
@@ -486,7 +490,7 @@ curl -X POST http://discovery:8500/api/register \
     "host": "'$(hostname -I | awk "{print \$1}")'",
     "port": 8080,
     "metadata": {
-      "procman": "true",
+      "testman": "true",
       "uiPath": "/",
       "description": "My Custom Service"
     }

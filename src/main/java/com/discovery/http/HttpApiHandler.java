@@ -40,7 +40,7 @@ public class HttpApiHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String path = exchange.getRequestURI().getPath();
+        String path = HttpPathUtil.normalizePath(exchange.getRequestURI().getPath());
         String method = exchange.getRequestMethod();
 
         addCorsHeaders(exchange.getResponseHeaders());
@@ -54,13 +54,13 @@ public class HttpApiHandler implements HttpHandler {
             if ("/api/register".equals(path) && "POST".equals(method)) {
                 handleRegister(exchange);
             } else if (path.startsWith("/api/deregister/") && "DELETE".equals(method)) {
-                handleDeregister(exchange);
+                handleDeregister(exchange, path);
             } else if (path.startsWith("/api/heartbeat/") && "POST".equals(method)) {
-                handleHeartbeat(exchange);
+                handleHeartbeat(exchange, path);
             } else if ("/api/services".equals(path) && "GET".equals(method)) {
                 handleGetServices(exchange);
             } else if (path.startsWith("/api/instances/") && "GET".equals(method)) {
-                handleGetInstance(exchange);
+                handleGetInstance(exchange, path);
             } else if ("/api/health".equals(path) && "GET".equals(method)) {
                 handleHealth(exchange);
             } else if ("/api/webhooks".equals(path)) {
@@ -103,8 +103,8 @@ public class HttpApiHandler implements HttpHandler {
         sendJson(exchange, 201, gson.toJson(response));
     }
 
-    private void handleDeregister(HttpExchange exchange) throws IOException {
-        String instanceId = extractPathParam(exchange.getRequestURI().getPath(), "/api/deregister/");
+    private void handleDeregister(HttpExchange exchange, String path) throws IOException {
+        String instanceId = extractPathParam(path, "/api/deregister/");
         boolean removed = registry.deregister(instanceId);
         if (removed) {
             sendJson(exchange, 200, successJson("Deregistered " + instanceId));
@@ -113,8 +113,8 @@ public class HttpApiHandler implements HttpHandler {
         }
     }
 
-    private void handleHeartbeat(HttpExchange exchange) throws IOException {
-        String instanceId = extractPathParam(exchange.getRequestURI().getPath(), "/api/heartbeat/");
+    private void handleHeartbeat(HttpExchange exchange, String path) throws IOException {
+        String instanceId = extractPathParam(path, "/api/heartbeat/");
         boolean updated = registry.heartbeat(instanceId);
         if (updated) {
             sendJson(exchange, 200, successJson("Heartbeat received"));
@@ -146,7 +146,14 @@ public class HttpApiHandler implements HttpHandler {
                 }
             }
             if (metaKey != null) {
-                grouped = registry.getGroupedByMetadata(metaKey, metaValue);
+                // TestMan uses ?testman=true; still show legacy services registered with procman=true
+                if ("testman".equals(metaKey) && "true".equals(metaValue)) {
+                    grouped = mergeGrouped(
+                            registry.getGroupedByMetadata("testman", "true"),
+                            registry.getGroupedByMetadata("procman", "true"));
+                } else {
+                    grouped = registry.getGroupedByMetadata(metaKey, metaValue);
+                }
             } else {
                 grouped = registry.getGrouped();
             }
@@ -166,8 +173,8 @@ public class HttpApiHandler implements HttpHandler {
         sendJson(exchange, 200, gson.toJson(response));
     }
 
-    private void handleGetInstance(HttpExchange exchange) throws IOException {
-        String instanceId = extractPathParam(exchange.getRequestURI().getPath(), "/api/instances/");
+    private void handleGetInstance(HttpExchange exchange, String path) throws IOException {
+        String instanceId = extractPathParam(path, "/api/instances/");
         ServiceInstance inst = registry.getInstance(instanceId);
         if (inst != null) {
             sendJson(exchange, 200, gson.toJson(inst));
@@ -294,6 +301,34 @@ public class HttpApiHandler implements HttpHandler {
             }
             return bos.toString("UTF-8");
         }
+    }
+
+    /**
+     * Merge two name-&gt;instances maps (e.g. testman=true and legacy procman=true) without duplicate instanceIds.
+     */
+    private static Map<String, List<ServiceInstance>> mergeGrouped(
+            Map<String, List<ServiceInstance>> a,
+            Map<String, List<ServiceInstance>> b) {
+        Map<String, List<ServiceInstance>> out = new LinkedHashMap<>(a);
+        for (Map.Entry<String, List<ServiceInstance>> e : b.entrySet()) {
+            String name = e.getKey();
+            List<ServiceInstance> incoming = e.getValue();
+            if (!out.containsKey(name)) {
+                out.put(name, new ArrayList<>(incoming));
+            } else {
+                List<ServiceInstance> existing = out.get(name);
+                Set<String> ids = new HashSet<>();
+                for (ServiceInstance i : existing) {
+                    ids.add(i.getInstanceId());
+                }
+                for (ServiceInstance i : incoming) {
+                    if (ids.add(i.getInstanceId())) {
+                        existing.add(i);
+                    }
+                }
+            }
+        }
+        return out;
     }
 
     private static String extractPathParam(String path, String prefix) {

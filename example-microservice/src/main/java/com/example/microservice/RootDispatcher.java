@@ -5,10 +5,6 @@ import com.sun.net.httpserver.HttpHandler;
 
 import java.io.IOException;
 
-/**
- * Single HTTP entry: routes {@code /api/*} to the JSON backend, everything else to the static frontend.
- * Avoids JDK {@code HttpServer} context ordering quirks and keeps backend vs frontend explicit.
- */
 public class RootDispatcher implements HttpHandler {
 
     private final HttpHandler backend;
@@ -22,7 +18,7 @@ public class RootDispatcher implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        if (path.startsWith("/api")) {
+        if (path != null && path.startsWith("/api")) {
             backend.handle(exchange);
         } else {
             frontend.handle(exchange);

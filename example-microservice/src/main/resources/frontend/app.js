@@ -1,14 +1,7 @@
-/**
- * Frontend: calls the microservice JSON API using a path relative to this page.
- * When ProcMan loads us as http://discovery:8500/proxy/{instanceId}/, absolute URLs
- * like http://discovery:8500/api/status hit the wrong host path — so we must use ./api/...
- */
 (function () {
-    var API_STATUS = './api/status';
-
     function update() {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', API_STATUS);
+        xhr.open('GET', './api/status');
         xhr.onload = function () {
             if (xhr.status === 200) {
                 var data = JSON.parse(xhr.responseText);

@@ -40,7 +40,12 @@ public class ProxyHandler implements HttpHandler {
             return;
         }
 
-        String path = exchange.getRequestURI().getPath();
+        String path = HttpPathUtil.normalizePath(exchange.getRequestURI().getPath());
+        if (!path.startsWith("/proxy/")) {
+            sendError(exchange, 404, "Invalid proxy path");
+            exchange.close();
+            return;
+        }
         String remaining = path.substring("/proxy/".length());
 
         int slashIdx = remaining.indexOf('/');
@@ -51,17 +56,19 @@ public class ProxyHandler implements HttpHandler {
             targetPath = "/";
         } else {
             instanceId = remaining.substring(0, slashIdx);
-            targetPath = remaining.substring(slashIdx);
+            targetPath = HttpPathUtil.normalizePath(remaining.substring(slashIdx));
         }
 
         if (instanceId.isEmpty()) {
             sendError(exchange, 400, "Missing instance ID in proxy path");
+            exchange.close();
             return;
         }
 
         ServiceInstance instance = registry.getInstance(instanceId);
         if (instance == null) {
             sendError(exchange, 404, "Instance not found: " + instanceId);
+            exchange.close();
             return;
         }
 

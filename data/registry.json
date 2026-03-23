@@ -6,7 +6,7 @@
     "port": 9002,
     "protocol": "http",
     "metadata": {
-      "procman": "true",
+      "testman": "true",
       "description": "System Dashboard Microservice",
       "uiPath": "/"
     },
@@ -20,7 +20,7 @@
     "port": 9001,
     "protocol": "http",
     "metadata": {
-      "procman": "true",
+      "testman": "true",
       "description": "System Dashboard Microservice",
       "uiPath": "/"
     },

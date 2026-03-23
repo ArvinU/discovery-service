@@ -11,7 +11,7 @@ One JVM process serves both: `RootDispatcher` sends `/api/*` to the backend and 
 
 ## Why relative API URLs?
 
-When ProcMan embeds the UI in an iframe, the page URL is like:
+When TestMan embeds the UI in an iframe, the page URL is like:
 
 `http://localhost:8500/proxy/{instanceId}/`
 
@@ -24,7 +24,7 @@ which the discovery proxy forwards to the microservice.
 ## API
 
 - `GET /api/status` — full status JSON for the dashboard
-- `GET /api/procman-info` — small JSON for ProcMan’s “Get info from service” button
+- `GET /api/test-info` — small JSON for TestMan’s “Get info from service” button
 - `OPTIONS /api/*` — CORS preflight
 
 ## Run

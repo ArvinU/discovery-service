@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 /**
  * Demo: register, heartbeat, and deregister with discovery only over <strong>TCP</strong>.
- * The HTTP server here is only for the ProcMan UI / proxy, not for discovery.
+ * The HTTP server here is only for the TestMan UI / proxy, not for discovery.
  */
 public class TcpDemoApp {
 
@@ -31,7 +31,7 @@ public class TcpDemoApp {
         String host = env("SERVICE_HOST", "localhost");
 
         Map<String, String> metadata = new HashMap<>();
-        metadata.put("procman", "true");
+        metadata.put("testman", "true");
         metadata.put("uiPath", "/");
         metadata.put("description", "TCP registration demo");
 
@@ -64,7 +64,7 @@ public class TcpDemoApp {
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
 
-        LOG.info("TCP demo HTTP UI on port " + port + " — discovery traffic uses TCP " + tcpHost + ":" + tcpPort);
+        LOG.info("TCP demo HTTP UI on port " + port + " — discovery uses TCP " + tcpHost + ":" + tcpPort + "; TestMan lists testman=true");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.stop(2);
